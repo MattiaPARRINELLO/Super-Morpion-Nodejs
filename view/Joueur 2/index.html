@@ -822,6 +822,16 @@
         player(caseID);
         console.log("Recieved");
       });
+      socket.on("State", function (msg) {
+        alert(msg);
+      });
+      socket.on("connect", function () {
+        debuging("Connected to the server", "success");
+      });
+      socket.on("disconnect", function () {
+        alert("Disconnected from the server");
+        debuging("Disconnected from the server", "error");
+      });
       initGame();
     </script>
 
