@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Super Morpion</title>
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: roboto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100vh;
+      background-color: #333;
+      color: #fff;
+    }
+
+    .joueur {
+      padding: 10px;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      font-family: roboto;
+      margin: 0;
+    }
+    .joueur h1 {
+      position: absolute;
+      left: 50;
+      font-size: 2rem;
+    }
+
+    .points {
+      font-size: 1.5rem;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: left;
+    }
+
+    .points p {
+      margin-left: 15px;
+    }
+    .plateau {
+      width: 800px;
+      height: 90%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      align-items: center;
+      justify-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      margin-left: 3%;
+      margin-right: 3%;
+      grid-gap: 5px;
+    }
+
+    .grCase {
+      border: 1px solid #fff;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      margin-left: 3%;
+      margin-right: 3%;
+      transition: all 0.5s ease;
+      /* set only the text on the center */
+      justify-content: center;
+    }
+
+    .bigText {
+      justify-content: center;
+      align-items: center;
+      font-size: 5rem;
+      display: flex;
+    }
+    .ptCase {
+      border: 2px solid #fff;
+      border-top: none;
+      border-left: none;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2rem;
+      transition: all 0.5s ease;
+      cursor: pointer;
+    }
+
+    .fade {
+      filter: opacity(0.8);
+      border: 0.5px solid #333333;
+      background-color: #383838;
+    }
+
+    .fade .ptCase {
+      color: #383838;
+      border: 0.5px solid #868484;
+      cursor: not-allowed;
+    }
+
+    .active {
+      transform: scale(1.1);
+    }
+
+    .popup {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.5s ease;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .popupContent {
+      width: 75%;
+      height: 75%;
+      background-color: #6e6b6b;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .popupText {
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+  </style>
+  <body>
+    <header class="joueur">
+      <h1>Au tour de : <span id="tour"></span></h1>
+      <div class="points">
+        <p>⭕ : <span id="ptcercle"></span></p>
+        <p>❌ : <span id="ptcroix"></span></p>
+      </div>
+    </header>
+    <div class="plateau">
+      <div class="grCase" id="gr1">
+        <div class="ptCase" id="1pt1"></div>
+        <div class="ptCase" id="1pt2"></div>
+        <div class="ptCase" id="1pt3"></div>
+        <div class="ptCase" id="1pt4"></div>
+        <div class="ptCase" id="1pt5"></div>
+        <div class="ptCase" id="1pt6"></div>
+        <div class="ptCase" id="1pt7"></div>
+        <div class="ptCase" id="1pt8"></div>
+        <div class="ptCase" id="1pt9"></div>
+      </div>
+      <div class="grCase" id="gr2">
+        <div class="ptCase" id="2pt1"></div>
+        <div class="ptCase" id="2pt2"></div>
+        <div class="ptCase" id="2pt3"></div>
+        <div class="ptCase" id="2pt4"></div>
+        <div class="ptCase" id="2pt5"></div>
+        <div class="ptCase" id="2pt6"></div>
+        <div class="ptCase" id="2pt7"></div>
+        <div class="ptCase" id="2pt8"></div>
+        <div class="ptCase" id="2pt9"></div>
+      </div>
+      <div class="grCase" id="gr3">
+        <div class="ptCase" id="3pt1"></div>
+        <div class="ptCase" id="3pt2"></div>
+        <div class="ptCase" id="3pt3"></div>
+        <div class="ptCase" id="3pt4"></div>
+        <div class="ptCase" id="3pt5"></div>
+        <div class="ptCase" id="3pt6"></div>
+        <div class="ptCase" id="3pt7"></div>
+        <div class="ptCase" id="3pt8"></div>
+        <div class="ptCase" id="3pt9"></div>
+      </div>
+      <div class="grCase" id="gr4">
+        <div class="ptCase" id="4pt1"></div>
+        <div class="ptCase" id="4pt2"></div>
+        <div class="ptCase" id="4pt3"></div>
+        <div class="ptCase" id="4pt4"></div>
+        <div class="ptCase" id="4pt5"></div>
+        <div class="ptCase" id="4pt6"></div>
+        <div class="ptCase" id="4pt7"></div>
+        <div class="ptCase" id="4pt8"></div>
+        <div class="ptCase" id="4pt9"></div>
+      </div>
+      <div class="grCase" id="gr5">
+        <div class="ptCase" id="5pt1"></div>
+        <div class="ptCase" id="5pt2"></div>
+        <div class="ptCase" id="5pt3"></div>
+        <div class="ptCase" id="5pt4"></div>
+        <div class="ptCase" id="5pt5"></div>
+        <div class="ptCase" id="5pt6"></div>
+        <div class="ptCase" id="5pt7"></div>
+        <div class="ptCase" id="5pt8"></div>
+        <div class="ptCase" id="5pt9"></div>
+      </div>
+      <div class="grCase" id="gr6">
+        <div class="ptCase" id="6pt1"></div>
+        <div class="ptCase" id="6pt2"></div>
+        <div class="ptCase" id="6pt3"></div>
+        <div class="ptCase" id="6pt4"></div>
+        <div class="ptCase" id="6pt5"></div>
+        <div class="ptCase" id="6pt6"></div>
+        <div class="ptCase" id="6pt7"></div>
+        <div class="ptCase" id="6pt8"></div>
+        <div class="ptCase" id="6pt9"></div>
+      </div>
+      <div class="grCase" id="gr7">
+        <div class="ptCase" id="7pt1"></div>
+        <div class="ptCase" id="7pt2"></div>
+        <div class="ptCase" id="7pt3"></div>
+        <div class="ptCase" id="7pt4"></div>
+        <div class="ptCase" id="7pt5"></div>
+        <div class="ptCase" id="7pt6"></div>
+        <div class="ptCase" id="7pt7"></div>
+        <div class="ptCase" id="7pt8"></div>
+        <div class="ptCase" id="7pt9"></div>
+      </div>
+      <div class="grCase" id="gr8">
+        <div class="ptCase" id="8pt1"></div>
+        <div class="ptCase" id="8pt2"></div>
+        <div class="ptCase" id="8pt3"></div>
+        <div class="ptCase" id="8pt4"></div>
+        <div class="ptCase" id="8pt5"></div>
+        <div class="ptCase" id="8pt6"></div>
+        <div class="ptCase" id="8pt7"></div>
+        <div class="ptCase" id="8pt8"></div>
+        <div class="ptCase" id="8pt9"></div>
+      </div>
+      <div class="grCase" id="gr9">
+        <div class="ptCase" id="9pt1"></div>
+        <div class="ptCase" id="9pt2"></div>
+        <div class="ptCase" id="9pt3"></div>
+        <div class="ptCase" id="9pt4"></div>
+        <div class="ptCase" id="9pt5"></div>
+        <div class="ptCase" id="9pt6"></div>
+        <div class="ptCase" id="9pt7"></div>
+        <div class="ptCase" id="9pt8"></div>
+        <div class="ptCase" id="9pt9"></div>
+      </div>
+    </div>
+    <script>
+      alert("Vous êtes une croix");
+      let debug = true;
+      var socket = io();
+      const elements = {
+        tourActuel: "rond",
+        tourEl: document.getElementById("tour"),
+        points: {
+          cercleEl: document.getElementById("ptcercle"),
+          croixEl: document.getElementById("ptcroix"),
+          cercle: 0,
+          croix: 0,
+        },
+        game: [["x"], ["x"], ["x"], ["x"], ["x"], ["x"], ["x"], ["x"], ["x"]],
+        joueurs: ["❌", "⭕"],
+        fullCases: [],
+        numLastClicked: 0,
+        grCase1: {
+          el: document.getElementById("gr1"),
+          id: "1",
+          ptCase: {
+            1: document.getElementById("1pt1"),
+            2: document.getElementById("1pt2"),
+            3: document.getElementById("1pt3"),
+            4: document.getElementById("1pt4"),
+            5: document.getElementById("1pt5"),
+            6: document.getElementById("1pt6"),
+            7: document.getElementById("1pt7"),
+            8: document.getElementById("1pt8"),
+            9: document.getElementById("1pt9"),
+          },
+        },
+        grCase2: {
+          el: document.getElementById("gr2"),
+          id: "2",
+          ptCase: {
+            1: document.getElementById("2pt1"),
+            2: document.getElementById("2pt2"),
+            3: document.getElementById("2pt3"),
+            4: document.getElementById("2pt4"),
+            5: document.getElementById("2pt5"),
+            6: document.getElementById("2pt6"),
+            7: document.getElementById("2pt7"),
+            8: document.getElementById("2pt8"),
+            9: document.getElementById("2pt9"),
+          },
+        },
+        grCase3: {
+          el: document.getElementById("gr3"),
+          id: "3",
+          ptCase: {
+            1: document.getElementById("3pt1"),
+            2: document.getElementById("3pt2"),
+            3: document.getElementById("3pt3"),
+            4: document.getElementById("3pt4"),
+            5: document.getElementById("3pt5"),
+            6: document.getElementById("3pt6"),
+            7: document.getElementById("3pt7"),
+            8: document.getElementById("3pt8"),
+            9: document.getElementById("3pt9"),
+          },
+        },
+        grCase4: {
+          el: document.getElementById("gr4"),
+          id: "4",
+          ptCase: {
+            1: document.getElementById("4pt1"),
+            2: document.getElementById("4pt2"),
+            3: document.getElementById("4pt3"),
+            4: document.getElementById("4pt4"),
+            5: document.getElementById("4pt5"),
+            6: document.getElementById("4pt6"),
+            7: document.getElementById("4pt7"),
+            8: document.getElementById("4pt8"),
+            9: document.getElementById("4pt9"),
+          },
+        },
+        grCase5: {
+          el: document.getElementById("gr5"),
+          id: "5",
+          ptCase: {
+            1: document.getElementById("5pt1"),
+            2: document.getElementById("5pt2"),
+            3: document.getElementById("5pt3"),
+            4: document.getElementById("5pt4"),
+            5: document.getElementById("5pt5"),
+            6: document.getElementById("5pt6"),
+            7: document.getElementById("5pt7"),
+            8: document.getElementById("5pt8"),
+            9: document.getElementById("5pt9"),
+          },
+        },
+        grCase6: {
+          el: document.getElementById("gr6"),
+          id: "6",
+          ptCase: {
+            1: document.getElementById("6pt1"),
+            2: document.getElementById("6pt2"),
+            3: document.getElementById("6pt3"),
+            4: document.getElementById("6pt4"),
+            5: document.getElementById("6pt5"),
+            6: document.getElementById("6pt6"),
+            7: document.getElementById("6pt7"),
+            8: document.getElementById("6pt8"),
+            9: document.getElementById("6pt9"),
+          },
+        },
+        grCase7: {
+          el: document.getElementById("gr7"),
+          id: "7",
+          ptCase: {
+            1: document.getElementById("7pt1"),
+            2: document.getElementById("7pt2"),
+            3: document.getElementById("7pt3"),
+            4: document.getElementById("7pt4"),
+            5: document.getElementById("7pt5"),
+            6: document.getElementById("7pt6"),
+            7: document.getElementById("7pt7"),
+            8: document.getElementById("7pt8"),
+            9: document.getElementById("7pt9"),
+          },
+        },
+        grCase8: {
+          el: document.getElementById("gr8"),
+          id: "8",
+          ptCase: {
+            1: document.getElementById("8pt1"),
+            2: document.getElementById("8pt2"),
+            3: document.getElementById("8pt3"),
+            4: document.getElementById("8pt4"),
+            5: document.getElementById("8pt5"),
+            6: document.getElementById("8pt6"),
+            7: document.getElementById("8pt7"),
+            8: document.getElementById("8pt8"),
+            9: document.getElementById("8pt9"),
+          },
+        },
+        grCase9: {
+          el: document.getElementById("gr9"),
+          id: "9",
+          ptCase: {
+            1: document.getElementById("9pt1"),
+            2: document.getElementById("9pt2"),
+            3: document.getElementById("9pt3"),
+            4: document.getElementById("9pt4"),
+            5: document.getElementById("9pt5"),
+            6: document.getElementById("9pt6"),
+            7: document.getElementById("9pt7"),
+            8: document.getElementById("9pt8"),
+            9: document.getElementById("9pt9"),
+          },
+        },
+      };
+
+      const initGame = () => {
+        debuging("Game initialized", "success");
+        elements.tourEl.textContent = elements.joueurs[1];
+        debuging(`${elements.joueurs[1]} starts`, "info");
+        elements.points.cercleEl.textContent = "0";
+        elements.points.croixEl.textContent = "0";
+        elements.tourActuel = elements.joueurs[1];
+        for (let i = 1; i <= 9; i++) {
+          for (let j = 1; j <= 9; j++) {
+            let ptCase = elements[`grCase${i}`].ptCase[j];
+            ptCase.textContent = "";
+          }
+        }
+        callAllCases();
+      };
+
+      const callAllCases = () => {
+        for (let i = 1; i <= 9; i++) {
+          for (let j = 1; j <= 9; j++) {
+            let ptCase = elements[`grCase${i}`].ptCase[j];
+            addEventListeners(ptCase);
+          }
+        }
+        debuging(`Added Event Listener in all cases`, "info");
+      };
+
+      const addEventListeners = (caseEl) => {
+        caseEl.addEventListener("click", () => {
+          caseClicked(caseEl, false);
+        });
+      };
+
+      const caseClicked = (caseEl, bool) => {
+        if (
+          (!bool && elements.tourActuel != elements.joueurs[1]) ||
+          (bool && elements.tourActuel == elements.joueurs[1])
+        ) {
+          console.log("Bool", bool);
+          console.log("Tour", elements.tourActuel);
+          console.log("Joueur", elements.joueurs[1]);
+          if (!bool) {
+            sendData(caseEl.id);
+          }
+          let ptCase = caseEl.textContent;
+          debuging(`Case ${caseEl.id} clicked`, "info");
+          if (ptCase === "") {
+            debuging(`Case ${caseEl.id} is empty`, "success");
+            if (elements.numLastClicked != 0) {
+              if (caseEl.id[0] == elements.numLastClicked) {
+                debuging(`Case ${caseEl.id} is playable`, "success");
+                caseEl.textContent = elements.tourActuel;
+                debuging(
+                  `Case ${caseEl.id} marked as ${elements.tourActuel}`,
+                  "success"
+                );
+                changeTour(caseEl);
+                checkHalfWin(caseEl.id[0]);
+              }
+            } else {
+              caseEl.textContent = elements.tourActuel;
+              debuging(
+                `Case ${caseEl.id} marked as ${elements.tourActuel}`,
+                "success"
+              );
+              changeTour(caseEl);
+              checkHalfWin(caseEl.id[0]);
+            }
+          } else {
+            debuging(`Case ${caseEl.id} already clicked`, "warning");
+          }
+        }
+      };
+      const checkHalfWin = (bigCase) => {
+        debuging(`Checking half-win in case ${bigCase}`, "warning");
+        let ptCase = elements[`grCase${bigCase}`].ptCase;
+        if (
+          ptCase[1].textContent == ptCase[2].textContent &&
+          ptCase[2].textContent == ptCase[3].textContent &&
+          ptCase[1].textContent != ""
+        ) {
+          debuging(
+            `Half-win happened in case ${bigCase} with the case 1,2 and 3`,
+            "info"
+          );
+          makeHalfWin(bigCase, 1);
+        } else if (
+          ptCase[4].textContent == ptCase[5].textContent &&
+          ptCase[5].textContent == ptCase[6].textContent &&
+          ptCase[4].textContent != ""
+        ) {
+          debuging(
+            `Half-winn happened in case ${bigCase} with the case 4,5 and 6`,
+            "info"
+          );
+          makeHalfWin(bigCase, 4);
+        } else if (
+          ptCase[7].textContent == ptCase[8].textContent &&
+          ptCase[8].textContent == ptCase[9].textContent &&
+          ptCase[7].textContent != ""
+        ) {
+          debuging(
+            `Half-win happened in case ${bigCase} with the case 7,8 and 9`,
+            "info"
+          );
+          makeHalfWin(bigCase, 7);
+        } else if (
+          ptCase[1].textContent == ptCase[4].textContent &&
+          ptCase[4].textContent == ptCase[7].textContent &&
+          ptCase[1].textContent != ""
+        ) {
+          debuging(
+            `Half-win happened in case ${bigCase} with the case 1,4 and 7`,
+            "info"
+          );
+          makeHalfWin(bigCase, 1);
+        } else if (
+          ptCase[2].textContent == ptCase[5].textContent &&
+          ptCase[5].textContent == ptCase[8].textContent &&
+          ptCase[2].textContent != ""
+        ) {
+          debuging(
+            `Half-win happened in case ${bigCase} with the case 2,5 and 8`,
+            "info"
+          );
+          makeHalfWin(bigCase, 2);
+        } else if (
+          ptCase[3].textContent == ptCase[6].textContent &&
+          ptCase[6].textContent == ptCase[9].textContent &&
+          ptCase[3].textContent != ""
+        ) {
+          debuging(
+            `Half-win happened in case ${bigCase} with the case 3,6 and 9`,
+            "info"
+          );
+          makeHalfWin(bigCase, 3);
+        } else if (
+          ptCase[1].textContent == ptCase[5].textContent &&
+          ptCase[5].textContent == ptCase[9].textContent &&
+          ptCase[1].textContent != ""
+        ) {
+          debuging(
+            `Half-win happened in case ${bigCase} with the case 1,5 and 9`,
+            "info"
+          );
+          makeHalfWin(bigCase, 1);
+        } else if (
+          ptCase[3].textContent == ptCase[5].textContent &&
+          ptCase[5].textContent == ptCase[7].textContent &&
+          ptCase[3].textContent != ""
+        ) {
+          debuging(
+            `Half-win happened in case ${bigCase} with the case 3,5 and 7`,
+            "info"
+          );
+          makeHalfWin(bigCase, 3);
+        } else if (
+          ptCase[1].textContent != "" &&
+          ptCase[2].textContent != "" &&
+          ptCase[3].textContent != "" &&
+          ptCase[4].textContent != "" &&
+          ptCase[5].textContent != "" &&
+          ptCase[6].textContent != "" &&
+          ptCase[7].textContent != "" &&
+          ptCase[8].textContent != "" &&
+          ptCase[9].textContent != ""
+        ) {
+          debuging(`case ${bigCase} is full, added it to fullCases`, `success`);
+          elements.fullCases.push(parseInt(bigCase));
+          makeAllCasePlayable();
+          checkWin();
+        } else {
+          debuging(`No half-win in case ${bigCase}`, "info");
+        }
+      };
+      const makeHalfWin = (bigCase, pt1) => {
+        elements.game[bigCase - 1] =
+          elements[`grCase${bigCase}`].ptCase[pt1].textContent;
+        elements[`grCase${bigCase}`].el.innerHTML =
+          elements[`grCase${bigCase}`].ptCase[pt1].textContent;
+        elements[`grCase${bigCase}`].el.classList.add("bigText");
+        elements[`grCase${bigCase}`].el.classList.remove("active");
+        elements.fullCases.push(parseInt(bigCase));
+        debuging(`Half-win marked in case ${bigCase}`, "success");
+        makeAllCasePlayable();
+        checkWin();
+      };
+
+      const changeTour = (caseEl) => {
+        let id = caseEl.id[3];
+        elements.numLastClicked = id;
+        elements.tourActuel =
+          elements.tourActuel === elements.joueurs[0]
+            ? elements.joueurs[1]
+            : elements.joueurs[0];
+        elements.tourEl.textContent = elements.tourActuel;
+        debuging(`Tour changed to ${elements.tourActuel}`, "success");
+        if (elements.fullCases.includes(parseInt(elements.numLastClicked))) {
+          makeAllCasePlayable();
+        } else {
+          fadeCases();
+        }
+      };
+
+      const fadeCases = () => {
+        for (let i = 1; i <= 9; i++) {
+          if (i != elements.numLastClicked || elements.fullCases.includes(i)) {
+            elements[`grCase${i}`].el.classList.remove("active");
+            elements[`grCase${i}`].el.classList.add("fade");
+          } else {
+            elements[`grCase${i}`].el.classList.remove("fade");
+            elements[`grCase${i}`].el.classList.add("active");
+            debuging(`Activated case ${i}`, `success`);
+          }
+        }
+      };
+
+      const makeAllCasePlayable = () => {
+        for (let i = 1; i <= 9; i++) {
+          elements[`grCase${i}`].el.classList.remove("fade");
+          elements[`grCase${i}`].el.classList.remove("active");
+          debuging(`Put ${i} case back to normal`, `success`);
+        }
+        elements.numLastClicked = 0;
+      };
+
+      const checkWin = () => {
+        if (
+          elements.game[0] == elements.game[1] &&
+          elements.game[1] == elements.game[2] &&
+          elements.game[0] != ""
+        ) {
+          debuging(`Win happened in cases 1,2 and 3`, "info");
+          makeWin(1, false);
+        }
+        if (
+          elements.game[3] == elements.game[4] &&
+          elements.game[4] == elements.game[5] &&
+          elements.game[3] != ""
+        ) {
+          debuging(`Win happened in cases 4,5 and 6`, "info");
+          makeWin(4, false);
+        }
+        if (
+          elements.game[6] == elements.game[7] &&
+          elements.game[7] == elements.game[8] &&
+          elements.game[6] != ""
+        ) {
+          debuging(`Win happened in cases 7,8 and 9`, "info");
+          makeWin(7, false);
+        }
+        if (
+          elements.game[0] == elements.game[3] &&
+          elements.game[3] == elements.game[6] &&
+          elements.game[0] != ""
+        ) {
+          debuging(`Win happened in cases 1,4 and 7`, "info");
+          makeWin(1, false);
+        }
+        if (
+          elements.game[1] == elements.game[4] &&
+          elements.game[4] == elements.game[7] &&
+          elements.game[1] != ""
+        ) {
+          debuging(`Win happened in cases 2,5 and 8`, "info");
+          makeWin(2, false);
+        }
+        if (
+          elements.game[2] == elements.game[5] &&
+          elements.game[5] == elements.game[8] &&
+          elements.game[2] != ""
+        ) {
+          debuging(`Win happened in cases 3,6 and 9`, "info");
+          makeWin(3, false);
+        }
+
+        if (
+          elements.game[0] == elements.game[4] &&
+          elements.game[4] == elements.game[8] &&
+          elements.game[0] != ""
+        ) {
+          debuging(`Win happened in cases 1,5 and 9`, "info");
+          makeWin(1, false);
+        }
+        if (
+          elements.game[2] == elements.game[4] &&
+          elements.game[4] == elements.game[6] &&
+          elements.game[2] != ""
+        ) {
+          debuging(`Win happened in cases 3,5 and 7`, "info");
+          makeWin(3, false);
+        }
+        if (elements.fullCases.length == 9) {
+          debuging(`Tie happened`, "info");
+          makeWin(0, true);
+        }
+      };
+
+      const makeWin = (pt1, tie) => {
+        if (tie) {
+          openPopup("Égalité !", "tie");
+        } else if (elements.game[pt1 - 1] == elements.joueurs[0]) {
+          openPopup(
+            `Les ${elements.joueurs[0]} ont gagné !`,
+            elements.joueurs[0]
+          );
+        } else if (elements.game[pt1 - 1] == elements.joueurs[1]) {
+          openPopup(
+            `Les ${elements.joueurs[1]} ont gagné !`,
+            elements.joueurs[1]
+          );
+        }
+        elements.numLastClicked = 0;
+        elements.tourActuel = elements.game[pt1 - 1];
+        elements.tourEl.textContent = elements.tourActuel;
+        for (let i = 1; i <= 9; i++) {
+          elements[`grCase${i}`].el.classList.remove("active");
+          elements[`grCase${i}`].el.classList.remove("fade");
+          elements[`grCase${i}`].el.classList.remove("bigText");
+          elements[`grCase${i}`].el.innerHTML = "";
+          for (let j = 1; j <= 9; j++) {
+            let div = document.createElement("div");
+            div.classList.add("ptCase");
+            div.id = `${i}pt${j}`;
+            elements[`grCase${i}`].el.appendChild(div);
+            elements[`grCase${i}`].ptCase[j] = div;
+          }
+          callAllCases();
+          elements.fullCases = [];
+          elements.game = [
+            ["x"],
+            ["x"],
+            ["x"],
+            ["x"],
+            ["x"],
+            ["x"],
+            ["x"],
+            ["x"],
+            ["x"],
+          ];
+          elements.numLastClicked = 0;
+          debuging(`Game reinitialised`, "warining");
+        }
+        makeAllCasePlayable();
+        changeTour();
+      };
+
+      const openPopup = (message, winner) => {
+        if (winner == elements.joueurs[0]) {
+          elements.points.croix++;
+          debuging(`Addded 1 point to ${elements.joueurs[0]}`, "success");
+        } else if (winner == elements.joueurs[1]) {
+          elements.points.cercle++;
+          debuging(`Addded 1 point to ${elements.joueurs[1]}`, "success");
+        } else if (winner == "tie") {
+        } else {
+          return Error;
+        }
+        elements.points.cercleEl.textContent = elements.points.cercle;
+        elements.points.croixEl.textContent = elements.points.croix;
+        let popup = document.createElement("div");
+        popup.classList.add("popup");
+        let popupContent = document.createElement("div");
+        popupContent.classList.add("popupContent");
+        let popupText = document.createElement("p");
+        popupText.classList.add("popupText");
+        popupText.textContent = message;
+        let popupText2 = document.createElement("p");
+        popupText2.classList.add("popupText");
+        popupText2.textContent =
+          "Les cercles ont : " + elements.points.cercle + " points !";
+        let popupText3 = document.createElement("p");
+        popupText3.classList.add("popupText");
+        popupText3.textContent =
+          "Les croix ont : " + elements.points.croix + " points !";
+        document.body.appendChild(popup);
+        popup.appendChild(popupContent);
+        popupContent.appendChild(popupText);
+        popupContent.appendChild(popupText2);
+        popupContent.appendChild(popupText3);
+        debuging(`Popup opened with "${message}" message`, "info");
+        setTimeout(() => {
+          popup.style.display = "none";
+          debuging(`Popup closed`, "info");
+        }, 3000);
+      };
+
+      const debuging = (message, type) => {
+        const style = `color: ${
+          type === "success"
+            ? "green"
+            : type === "info"
+            ? "lightblue"
+            : type === "warning"
+            ? "orange"
+            : "red"
+        }`;
+        debug ? console.log(`%c[SuperMorpion] - ${message}`, style) : null;
+      };
+
+      const player = (caseID) => {
+        // check if the tour is rond
+        if (elements.tourActuel == elements.joueurs[1]) {
+          idGrCase = caseID[0];
+          idPtCase = caseID[1];
+          caseClicked(elements[`grCase${idGrCase}`].ptCase[idPtCase], true);
+        }
+      };
+
+      const sendData = (caseID) => {
+        socket.emit("casePlayedJ1", caseID);
+      };
+      socket.on("casePlayedServerJ2", function (caseID) {
+        player(caseID);
+        console.log("Recieved");
+      });
+      initGame();
+    </script>
+  </body>
+</html>
